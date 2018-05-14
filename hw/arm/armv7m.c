@@ -314,6 +314,11 @@ void armv7m_load_kernel(ARMCPU *cpu, const char *kernel_filename, int mem_size)
         image_size = load_elf_as(kernel_filename, NULL, NULL, &entry, &lowaddr,
                                  NULL, big_endian, EM_ARM, 1, 0, as);
         if (image_size < 0) {
+            /* 32-bit ARM Intel HEX file */
+            entry = 0;
+            image_size = load_targphys_hex_as(kernel_filename, &entry, as);
+        }
+        if (image_size < 0) {
             image_size = load_image_targphys_as(kernel_filename, 0,
                                                 mem_size, as);
             lowaddr = 0;
