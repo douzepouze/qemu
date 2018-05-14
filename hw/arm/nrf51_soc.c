@@ -41,7 +41,7 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
     create_unimplemented_device("nrf51_soc.io", IOMEM_BASE, IOMEM_SIZE);
 
     /* FICR */
-    create_unimplemented_device("nrf51_soc.ficr", FICR_BASE, FICR_SIZE);
+/*    create_unimplemented_device("nrf51_soc.ficr", FICR_BASE, FICR_SIZE); */
 
     MemoryRegion *system_memory = get_system_memory();
     MemoryRegion *sram = g_new(MemoryRegion, 1);
