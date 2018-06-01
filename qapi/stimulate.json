@@ -1,5 +1,3 @@
-# -*- Mode: Python -*-
-
 ##
 # @ButtonPress:
 #
@@ -12,7 +10,7 @@
     'identifier': 'str',
     'pushed_down': 'bool'
      } }
-    
+
 ##
 # @buttons-set-state:
 #

@@ -18,14 +18,10 @@
 #include "qapi/qapi-commands-stimulate.h"
 
 #ifndef DEBUG_STIMULATE
-#define DEBUG_STIMULATE 1
+#define DEBUG_STIMULATE 0
 #endif
 
-#define DPRINTF(fmt, ...) do {                                           \
-    if (DEBUG_STIMULATE) {                                               \
-        qemu_log("stimulate: " fmt , ## __VA_ARGS__);                    \
-    }                                                                    \
-} while (0);
+#define DPRINTF(fmt, ...)                                            \
 
 void qmp_buttons_set_state(ButtonPressList *buttons, Error **errp)
 {
