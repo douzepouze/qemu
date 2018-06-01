@@ -1,0 +1,10 @@
+Put test and demo programs for the micro:bit here.
+
+This directory will not be merged into qemu.git/master.  It is purely for
+sharing small test programs during development.
+
+The programs can be MicroPython, Javascript/Blocks, Nordic SDK, etc.  Please
+include both the source code and the .hex file.
+
+Make sure changes to this directory are in separate commits from work you'd
+like merged into qemu.git/master.
