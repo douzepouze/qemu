@@ -48,7 +48,6 @@ struct {
         {.ram_size = 32, .flash_size = 256 },
 };
 
-
 static uint64_t clock_read(void *opaque, hwaddr addr, unsigned int size)
 {
     qemu_log_mask(LOG_UNIMP, "%s: 0x%" HWADDR_PRIx " [%u]\n", __func__, addr, size);
@@ -125,6 +124,12 @@ static void nrf51_soc_init(Object *obj)
     qdev_prop_set_string(DEVICE(&s->armv7m), "cpu-type",
                          ARM_CPU_TYPE_NAME("cortex-m3"));
 
+    object_initialize(&s->mmio, sizeof(s->mmio), TYPE_UNIMPLEMENTED_DEVICE);
+    object_property_add_child(obj, "iomem", OBJECT(&s->mmio), &error_abort);
+    qdev_set_parent_bus(DEVICE(&s->mmio), sysbus_get_default());
+    qdev_prop_set_string(DEVICE(&s->mmio), "name", "nrf51.iomem");
+    qdev_prop_set_uint64(DEVICE(&s->mmio), "size", IOMEM_SIZE);
+
     object_initialize(&s->uart, sizeof(s->uart), TYPE_NRF51_UART);
     object_property_add_child(obj, "uart", OBJECT(&s->uart), &error_abort);
     qdev_set_parent_bus(DEVICE(&s->uart), sysbus_get_default());
@@ -135,6 +140,7 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
 {
     NRF51State *s = NRF51_SOC(dev_soc);
     Error *err = NULL;
+    MemoryRegion *mr = NULL;
 
     if (!(s->part_variant > NRF51_VARIANT_INVALID
             && s->part_variant < NRF51_VARIANT_MAX)) {
@@ -142,6 +148,7 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
         return;
     }
 
+    /** SRAM **/
     memory_region_init_ram(&s->sram, NULL, "nrf51_soc.sram",
             NRF51VariantAttributes[s->part_variant].ram_size * PAGE_SIZE, &err);
     if (err) {
@@ -150,6 +157,7 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
     }
     memory_region_add_subregion(&s->container, SRAM_BASE, &s->sram);
 
+    /** FLASH **/
     memory_region_init_ram(&s->flash, NULL, "nrf51_soc.flash",
             NRF51VariantAttributes[s->part_variant].flash_size * PAGE_SIZE,
             &err);
@@ -159,6 +167,7 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
     }
     memory_region_add_subregion(&s->container, FLASH_BASE, &s->flash);
 
+    /** MCU **/
     qdev_prop_set_uint32(DEVICE(&s->armv7m), "num-irq", 60);
     object_property_set_link(OBJECT(&s->armv7m), OBJECT(&s->container),
                                          "memory", &err);
@@ -175,10 +184,9 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
     }
 
     /* IO space */
-    create_unimplemented_device("nrf51_soc.io", IOMEM_BASE, IOMEM_SIZE);
-
-    /* FICR */
-    create_unimplemented_device("nrf51_soc.ficr", FICR_BASE, FICR_SIZE);
+    object_property_set_bool(OBJECT(&s->mmio), true, "realized", &error_fatal);
+    mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->mmio), 0);
+    memory_region_add_subregion_overlap(&s->container, IOMEM_BASE, mr, -1500);
 
     qdev_prop_set_chr(DEVICE(&s->uart), "chardev", serial_hd(0));
     qdev_init_nofail(DEVICE(&s->uart));
