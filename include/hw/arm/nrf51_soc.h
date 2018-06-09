@@ -13,7 +13,9 @@
 #include "qemu/osdep.h"
 #include "hw/sysbus.h"
 #include "hw/arm/armv7m.h"
+#include "hw/misc/unimp.h"
 #include "hw/char/nrf51_uart.h"
+
 
 #define TYPE_NRF51_SOC "nrf51-soc"
 #define NRF51_SOC(obj) \
@@ -27,12 +29,12 @@ typedef struct NRF51State {
     /* TODO: Change to armv6m when cortex-m0 core is available */
     ARMv7MState armv7m;
 
+    UnimplementedDeviceState mmio;
     Nrf51UART uart;
 
     MemoryRegion container;
     MemoryRegion sram;
     MemoryRegion flash;
-    MemoryRegion iomem;
     MemoryRegion clock;
     MemoryRegion nvmc;
     MemoryRegion rng;
