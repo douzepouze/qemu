@@ -15,6 +15,7 @@
 #include "hw/arm/armv7m.h"
 #include "hw/misc/unimp.h"
 #include "hw/char/nrf51_uart.h"
+#include "hw/misc/nrf51_rng.h"
 
 
 #define TYPE_NRF51_SOC "nrf51-soc"
@@ -31,13 +32,15 @@ typedef struct NRF51State {
 
     UnimplementedDeviceState mmio;
     Nrf51UART uart;
+    Nrf51RNGState rng;
 
     MemoryRegion container;
     MemoryRegion sram;
     MemoryRegion flash;
+    MemoryRegion ficr;
+    MemoryRegion uicr;
     MemoryRegion clock;
     MemoryRegion nvmc;
-    MemoryRegion rng;
 
     /* Properties */
     int32_t part_variant;
