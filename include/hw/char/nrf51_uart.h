@@ -6,6 +6,13 @@
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 or
  * (at your option) any later version.
+ *
+ * QEMU interface:
+ * + sysbus MMIO regions 0: Memory Region with tasks, events and registers
+ *   to be mapped to the peripherals instance address by the SOC.
+ * + Named GPIO output "irq": Interrupt line of the peripheral. Must be
+ *   connected to the respective peripheral interrupt line of the NVIC.
+ *
  */
 
 #ifndef NRF51_UART_H
@@ -21,8 +28,8 @@
 
 typedef struct Nrf51UART {
     SysBusDevice parent_obj;
+    MemoryRegion iomem;
 
-    MemoryRegion mmio;
     CharBackend chr;
     qemu_irq irq;
     guint watch_tag;
@@ -33,22 +40,5 @@ typedef struct Nrf51UART {
 
     uint32_t reg[0x1000];
 } Nrf51UART;
-
-static inline DeviceState *nrf51_uart_create(hwaddr addr,
-                                             qemu_irq irq,
-                                             Chardev *chr)
-{
-    DeviceState *dev;
-    SysBusDevice *s;
-
-    dev = qdev_create(NULL, "nrf51_soc.uart");
-    s = SYS_BUS_DEVICE(dev);
-    qdev_prop_set_chr(dev, "chardev", chr);
-    qdev_init_nofail(dev);
-    sysbus_mmio_map(s, 0, addr);
-    sysbus_connect_irq(s, 0, irq);
-
-    return dev;
-}
 
 #endif
