@@ -35,8 +35,9 @@
 
 #define UART_BASE       0x40002000
 #define UART_SIZE       0x1000
+#define UART_INT        2
 
-#define PAGE_SIZE       0x0400
+#define PAGE_SIZE       1024
 
 
 struct {
@@ -148,7 +149,7 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
         return;
     }
 
-    /** SRAM **/
+    /* SRAM */
     memory_region_init_ram(&s->sram, NULL, "nrf51_soc.sram",
             NRF51VariantAttributes[s->part_variant].ram_size * PAGE_SIZE, &err);
     if (err) {
@@ -157,7 +158,7 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
     }
     memory_region_add_subregion(&s->container, SRAM_BASE, &s->sram);
 
-    /** FLASH **/
+    /* FLASH */
     memory_region_init_ram(&s->flash, NULL, "nrf51_soc.flash",
             NRF51VariantAttributes[s->part_variant].flash_size * PAGE_SIZE,
             &err);
@@ -167,7 +168,7 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
     }
     memory_region_add_subregion(&s->container, FLASH_BASE, &s->flash);
 
-    /** MCU **/
+    /* MCU */
     qdev_prop_set_uint32(DEVICE(&s->armv7m), "num-irq", 60);
     object_property_set_link(OBJECT(&s->armv7m), OBJECT(&s->container),
                                          "memory", &err);
@@ -184,15 +185,28 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
     }
 
     /* IO space */
-    object_property_set_bool(OBJECT(&s->mmio), true, "realized", &error_fatal);
+    object_property_set_bool(OBJECT(&s->mmio), true, "realized", &err);
+    if (err) {
+        error_propagate(errp, err);
+        return;
+    }
     mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->mmio), 0);
     memory_region_add_subregion_overlap(&s->container, IOMEM_BASE, mr, -1500);
 
+    /* UART */
     qdev_prop_set_chr(DEVICE(&s->uart), "chardev", serial_hd(0));
-    qdev_init_nofail(DEVICE(&s->uart));
-/*    sysbus_mmio_map(s, 0, UART_BASE);
-    sysbus_connect_irq(s, 0, qdev_get_gpio_in(s->nvic, 2)); */
+    object_property_set_bool(OBJECT(&s->uart), true, "realized", &err);
+    if (err) {
+        error_propagate(errp, err);
+        return;
+    }
 
+    mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->uart), 0);
+    memory_region_add_subregion_overlap(&s->container, UART_BASE, mr, 0);
+    qdev_connect_gpio_out_named(DEVICE(&s->uart), "irq", 0,
+            qdev_get_gpio_in(DEVICE(&s->armv7m), UART_INT));
+
+    /* STUB Peripherals */
     memory_region_init_io(&s->clock, NULL, &clock_ops, NULL, "nrf51_soc.clock", 0x1000);
     memory_region_add_subregion_overlap(&s->container, IOMEM_BASE, &s->clock, -1);
 

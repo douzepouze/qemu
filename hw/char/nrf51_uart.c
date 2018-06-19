@@ -13,6 +13,8 @@
 #include "hw/registerfields.h"
 #include "hw/char/nrf51_uart.h"
 
+#define NRF51_UART_SIZE       0x1000
+
 REG32(STARTRX, 0x000)
 REG32(STOPRX, 0x004)
 REG32(STARTTX, 0x008)
@@ -196,10 +198,10 @@ static void nrf51_uart_init(Object *obj)
     Nrf51UART *s = NRF51_UART(obj);
     SysBusDevice *sbd = SYS_BUS_DEVICE(obj);
 
-    memory_region_init_io(&s->mmio, obj, &uart_ops, s,
-                          "nrf51_soc.uart", 0x1000);
-    sysbus_init_mmio(sbd, &s->mmio);
-    sysbus_init_irq(sbd, &s->irq);
+    memory_region_init_io(&s->iomem, obj, &uart_ops, s,
+            "nrf51_soc.uart", NRF51_UART_SIZE);
+    sysbus_init_mmio(sbd, &s->iomem);
+    qdev_init_gpio_out_named(DEVICE(s), &s->irq, "irq", 1);
 }
 
 static Property nrf51_uart_properties[] = {
