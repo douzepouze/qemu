@@ -40,6 +40,9 @@
 #define UART_SIZE       0x1000
 #define UART_INT        2
 
+#define NVMC_BASE       0x4001E000
+#define NVMC_SIZE       0x1000
+
 #define RNG_BASE        0x4000D000
 
 #define PAGE_SIZE       1024
@@ -182,23 +185,6 @@ static const MemoryRegionOps clock_ops = {
     .write = clock_write
 };
 
-static uint64_t nvmc_read(void *opaque, hwaddr addr, unsigned int size)
-{
-    qemu_log_mask(LOG_TRACE, "%s: 0x%" HWADDR_PRIx " [%u]\n", __func__, addr, size);
-    return 1;
-}
-
-static void nvmc_write(void *opaque, hwaddr addr, uint64_t data, unsigned int size)
-{
-    qemu_log_mask(LOG_TRACE, "%s: 0x%" HWADDR_PRIx " <- 0x%" PRIx64 " [%u]\n", __func__, addr, data, size);
-}
-
-
-static const MemoryRegionOps nvmc_ops = {
-    .read = nvmc_read,
-    .write = nvmc_write
-};
-
 static void nrf51_soc_init(Object *obj)
 {
     NRF51State *s = NRF51_SOC(obj);
@@ -222,6 +208,10 @@ static void nrf51_soc_init(Object *obj)
     object_initialize(&s->uart, sizeof(s->uart), TYPE_NRF51_UART);
     object_property_add_child(obj, "uart", OBJECT(&s->uart), &error_abort);
     qdev_set_parent_bus(DEVICE(&s->uart), sysbus_get_default());
+
+    object_initialize(&s->nvmc, sizeof(s->nvmc), TYPE_NRF51_NVMC);
+    object_property_add_child(obj, "nvmc", OBJECT(&s->nvmc), &error_abort);
+    qdev_set_parent_bus(DEVICE(&s->nvmc), sysbus_get_default());
 
     object_initialize(&s->rng, sizeof(s->rng), TYPE_NRF51_RNG);
     object_property_add_child(obj, "rng", OBJECT(&s->rng), &error_abort);
@@ -309,6 +299,29 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
     qdev_connect_gpio_out_named(DEVICE(&s->uart), "irq", 0,
             qdev_get_gpio_in(DEVICE(&s->armv7m), BASE_TO_IRQ(UART_BASE)));
 
+    /* NVMC */
+    object_property_set_link(OBJECT(&s->nvmc), OBJECT(&s->container),
+                                         "memory", &err);
+    if (err) {
+        error_propagate(errp, err);
+        return;
+    }
+    object_property_set_uint(OBJECT(&s->nvmc),
+            NRF51VariantAttributes[s->part_variant].flash_size, "code_size",
+            &err);
+    if (err) {
+        error_propagate(errp, err);
+        return;
+    }
+    object_property_set_bool(OBJECT(&s->nvmc), true, "realized", &err);
+    if (err) {
+        error_propagate(errp, err);
+        return;
+    }
+
+    mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->nvmc), 0);
+    memory_region_add_subregion_overlap(&s->container, NVMC_BASE, mr, 0);
+
     /* RNG */
     object_property_set_bool(OBJECT(&s->rng), true, "realized", &err);
     if (err) {
@@ -324,9 +337,6 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
     /* STUB Peripherals */
     memory_region_init_io(&s->clock, NULL, &clock_ops, NULL, "nrf51_soc.clock", 0x1000);
     memory_region_add_subregion_overlap(&s->container, IOMEM_BASE, &s->clock, -1);
-
-    memory_region_init_io(&s->nvmc, NULL, &nvmc_ops, NULL, "nrf51_soc.nvmc", 0x1000);
-    memory_region_add_subregion_overlap(&s->container, 0x4001E000, &s->nvmc, -1);
 }
 
 static Property nrf51_soc_properties[] = {

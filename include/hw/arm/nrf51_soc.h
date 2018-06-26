@@ -15,6 +15,7 @@
 #include "hw/arm/armv7m.h"
 #include "hw/misc/unimp.h"
 #include "hw/char/nrf51_uart.h"
+#include "hw/nvram/nrf51_nvmc.h"
 #include "hw/misc/nrf51_rng.h"
 
 
@@ -32,6 +33,7 @@ typedef struct NRF51State {
 
     UnimplementedDeviceState mmio;
     Nrf51UART uart;
+    Nrf51NVMCState nvmc;
     Nrf51RNGState rng;
 
     MemoryRegion container;
@@ -40,7 +42,6 @@ typedef struct NRF51State {
     MemoryRegion ficr;
     MemoryRegion uicr;
     MemoryRegion clock;
-    MemoryRegion nvmc;
 
     /* Properties */
     int32_t part_variant;
