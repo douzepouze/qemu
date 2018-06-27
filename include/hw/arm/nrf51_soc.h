@@ -12,6 +12,8 @@
 
 #include "qemu/osdep.h"
 #include "hw/sysbus.h"
+#include "hw/arm/armv7m.h"
+#include "hw/char/nrf51_uart.h"
 
 #define TYPE_NRF51_SOC "nrf51-soc"
 #define NRF51_SOC(obj) \
@@ -22,16 +24,30 @@ typedef struct NRF51State {
     SysBusDevice parent_obj;
 
     /*< public >*/
-    char *kernel_filename;
-    DeviceState *nvic;
-    DeviceState *uart;
+    /* TODO: Change to armv6m when cortex-m0 core is available */
+    ARMv7MState armv7m;
 
+    Nrf51UART uart;
+
+    MemoryRegion container;
+    MemoryRegion sram;
+    MemoryRegion flash;
     MemoryRegion iomem;
-
     MemoryRegion clock;
     MemoryRegion nvmc;
     MemoryRegion rng;
+
+    /* Properties */
+    int32_t part_variant;
 } NRF51State;
+
+typedef enum {
+    NRF51_VARIANT_INVALID = -1,
+    NRF51_VARIANT_AA = 0,
+    NRF51_VARIANT_AB = 1,
+    NRF51_VARIANT_AC = 2,
+    NRF51_VARIANT_MAX = 3
+} NRF51Variants;
 
 #endif
 
