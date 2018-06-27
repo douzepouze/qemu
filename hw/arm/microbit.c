@@ -10,6 +10,7 @@
 #include "qemu/osdep.h"
 #include "qapi/error.h"
 #include "hw/boards.h"
+#include "hw/arm/arm.h"
 
 #include "hw/arm/nrf51_soc.h"
 
@@ -18,10 +19,11 @@ static void microbit_init(MachineState *machine)
     DeviceState *dev;
 
     dev = qdev_create(NULL, TYPE_NRF51_SOC);
-    if (machine->kernel_filename) {
-        qdev_prop_set_string(dev, "kernel-filename", machine->kernel_filename);
-    }
+    qdev_prop_set_uint32(DEVICE(dev), "VARIANT", NRF51_VARIANT_AA);
     object_property_set_bool(OBJECT(dev), true, "realized", &error_fatal);
+
+    armv7m_load_kernel(ARM_CPU(first_cpu), machine->kernel_filename,
+            0x00000000);
 }
 
 static void microbit_machine_init(MachineClass *mc)
