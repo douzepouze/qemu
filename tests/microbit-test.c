@@ -61,7 +61,7 @@ int main(int argc, char **argv)
     g_assert(ret == 0);
     close(fd);
 
-    global_qtest = qtest_startf("-machine microbit -kernel /home/pouze/projects/gsoc/test_firmware/microbit-micropython/microbit-micropython-e10a5ffdbaf1.elf");
+    global_qtest = qtest_startf("-machine microbit");
 
     qtest_add_func("/microbit/nrf51/nvmc", test_nrf51_nvmc);
 
