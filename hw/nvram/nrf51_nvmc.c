@@ -35,9 +35,6 @@ static uint64_t io_read(void *opaque, hwaddr offset, unsigned int size)
     Nrf51NVMCState *s = NRF51_NVMC(opaque);
     uint64_t r = 0;
 
-    qemu_log_mask(LOG_TRACE, "%s: 0x%" HWADDR_PRIx " [%u]\n",
-            __func__, offset, size);
-
     switch (offset) {
     case NRF51_NVMC_READY:
         r = NRF51_NVMC_READY_READY;
@@ -76,8 +73,6 @@ static void io_write(void *opaque, hwaddr offset, uint64_t value,
                 address_space_write(&s->as, i * s->page_size,
                 MEMTXATTRS_UNSPECIFIED, s->empty_page, s->page_size);
             }
-            address_space_write(&s->as, NRF51_UICR_OFFSET,
-            MEMTXATTRS_UNSPECIFIED, s->empty_page, NRF51_UICR_SIZE);
         }
         break;
     case NRF51_NVMC_ERASEUICR:
