@@ -25,8 +25,9 @@
 
 #define FLASH_BASE      0x00000000
 
+#define FICR_BASE       0x10000000
+
 #define UICR_BASE       0x10001000
-#define UICR_SIZE       0x100
 
 #define SRAM_BASE       0x20000000
 
@@ -164,12 +165,6 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
     mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->mmio), 0);
     memory_region_add_subregion_overlap(&s->container, IOMEM_BASE, mr, -1500);
 
-    /* FICR */
-    /* TODO move to NVMC initialization */
-
-    /* UICR */
-    /* TODO move to NVMC initialization */
-
     /* UART */
     qdev_prop_set_chr(DEVICE(&s->uart), "chardev", serial_hd(0));
     object_property_set_bool(OBJECT(&s->uart), true, "realized", &err);
@@ -205,6 +200,10 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
 
     mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->nvmc), 0);
     memory_region_add_subregion_overlap(&s->container, NVMC_BASE, mr, 0);
+    mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->nvmc), 1);
+    memory_region_add_subregion_overlap(&s->container, FICR_BASE, mr, 0);
+    mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->nvmc), 2);
+    memory_region_add_subregion_overlap(&s->container, UICR_BASE, mr, 0);
 
     /* RNG */
     object_property_set_bool(OBJECT(&s->rng), true, "realized", &err);
