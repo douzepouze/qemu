@@ -25,8 +25,9 @@
 
 #define FLASH_BASE      0x00000000
 
+#define FICR_BASE       0x10000000
+
 #define UICR_BASE       0x10001000
-#define UICR_SIZE       0x100
 
 #define SRAM_BASE       0x20000000
 
@@ -99,9 +100,9 @@ static void nrf51_soc_init(Object *obj)
     object_property_add_child(obj, "uart", OBJECT(&s->uart), &error_abort);
     qdev_set_parent_bus(DEVICE(&s->uart), sysbus_get_default());
 
-    object_initialize(&s->nvmc, sizeof(s->nvmc), TYPE_NRF51_NVMC);
-    object_property_add_child(obj, "nvmc", OBJECT(&s->nvmc), &error_abort);
-    qdev_set_parent_bus(DEVICE(&s->nvmc), sysbus_get_default());
+    object_initialize(&s->nvm, sizeof(s->nvm), TYPE_NRF51_NVM);
+    object_property_add_child(obj, "nvm", OBJECT(&s->nvm), &error_abort);
+    qdev_set_parent_bus(DEVICE(&s->nvm), sysbus_get_default());
 
     object_initialize(&s->rng, sizeof(s->rng), TYPE_NRF51_RNG);
     object_property_add_child(obj, "rng", OBJECT(&s->rng), &error_abort);
@@ -164,12 +165,6 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
     mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->mmio), 0);
     memory_region_add_subregion_overlap(&s->container, IOMEM_BASE, mr, -1500);
 
-    /* FICR */
-    /* TODO move to NVMC initialization */
-
-    /* UICR */
-    /* TODO move to NVMC initialization */
-
     /* UART */
     qdev_prop_set_chr(DEVICE(&s->uart), "chardev", serial_hd(0));
     object_property_set_bool(OBJECT(&s->uart), true, "realized", &err);
@@ -184,27 +179,31 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
             qdev_get_gpio_in(DEVICE(&s->armv7m), BASE_TO_IRQ(UART_BASE)));
 
     /* NVMC */
-    object_property_set_link(OBJECT(&s->nvmc), OBJECT(&s->container),
+    object_property_set_link(OBJECT(&s->nvm), OBJECT(&s->container),
                                          "memory", &err);
     if (err) {
         error_propagate(errp, err);
         return;
     }
-    object_property_set_uint(OBJECT(&s->nvmc),
+    object_property_set_uint(OBJECT(&s->nvm),
             NRF51VariantAttributes[s->part_variant].flash_size, "code_size",
             &err);
     if (err) {
         error_propagate(errp, err);
         return;
     }
-    object_property_set_bool(OBJECT(&s->nvmc), true, "realized", &err);
+    object_property_set_bool(OBJECT(&s->nvm), true, "realized", &err);
     if (err) {
         error_propagate(errp, err);
         return;
     }
 
-    mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->nvmc), 0);
+    mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->nvm), 0);
     memory_region_add_subregion_overlap(&s->container, NVMC_BASE, mr, 0);
+    mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->nvm), 1);
+    memory_region_add_subregion_overlap(&s->container, FICR_BASE, mr, 0);
+    mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->nvm), 2);
+    memory_region_add_subregion_overlap(&s->container, UICR_BASE, mr, 0);
 
     /* RNG */
     object_property_set_bool(OBJECT(&s->rng), true, "realized", &err);
