@@ -43,8 +43,7 @@
 #define NRF51_UICR_SIZE         0x100
 
 
-/*
-FICR Registers Assignments
+/* FICR Registers Assignments
 CODEPAGESIZE      0x010
 CODESIZE          0x014
 CLENR0            0x028
@@ -114,6 +113,129 @@ static const MemoryRegionOps ficr_ops = {
     .impl.max_access_size = 4,
     .impl.unaligned = false,
 };
+
+/* UICR Registers Assignments
+CLENR0           0x000
+RBPCONF          0x004
+XTALFREQ         0x008
+FWID             0x010
+BOOTLOADERADDR   0x014
+NRFFW[0]         0x014
+NRFFW[1]         0x018
+NRFFW[2]         0x01C
+NRFFW[3]         0x020
+NRFFW[4]         0x024
+NRFFW[5]         0x028
+NRFFW[6]         0x02C
+NRFFW[7]         0x030
+NRFFW[8]         0x034
+NRFFW[9]         0x038
+NRFFW[10]        0x03C
+NRFFW[11]        0x040
+NRFFW[12]        0x044
+NRFFW[13]        0x048
+NRFFW[14]        0x04C
+NRFHW[0]         0x050
+NRFHW[1]         0x054
+NRFHW[2]         0x058
+NRFHW[3]         0x05C
+NRFHW[4]         0x060
+NRFHW[5]         0x064
+NRFHW[6]         0x068
+NRFHW[7]         0x06C
+NRFHW[8]         0x070
+NRFHW[9]         0x074
+NRFHW[10]        0x078
+NRFHW[11]        0x07C
+CUSTOMER[0]      0x080
+CUSTOMER[1]      0x084
+CUSTOMER[2]      0x088
+CUSTOMER[3]      0x08C
+CUSTOMER[4]      0x090
+CUSTOMER[5]      0x094
+CUSTOMER[6]      0x098
+CUSTOMER[7]      0x09C
+CUSTOMER[8]      0x0A0
+CUSTOMER[9]      0x0A4
+CUSTOMER[10]     0x0A8
+CUSTOMER[11]     0x0AC
+CUSTOMER[12]     0x0B0
+CUSTOMER[13]     0x0B4
+CUSTOMER[14]     0x0B8
+CUSTOMER[15]     0x0BC
+CUSTOMER[16]     0x0C0
+CUSTOMER[17]     0x0C4
+CUSTOMER[18]     0x0C8
+CUSTOMER[19]     0x0CC
+CUSTOMER[20]     0x0D0
+CUSTOMER[21]     0x0D4
+CUSTOMER[22]     0x0D8
+CUSTOMER[23]     0x0DC
+CUSTOMER[24]     0x0E0
+CUSTOMER[25]     0x0E4
+CUSTOMER[26]     0x0E8
+CUSTOMER[27]     0x0EC
+CUSTOMER[28]     0x0F0
+CUSTOMER[29]     0x0F4
+CUSTOMER[30]     0x0F8
+CUSTOMER[31]     0x0FC
+*/
+
+static const uint32_t uicr_fixture[NRF51_UICR_FIXTURE_SIZE] = {
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, };
+
+static uint64_t uicr_read(void *opaque, hwaddr offset, unsigned int size)
+{
+    Nrf51NVMCState *s = NRF51_NVMC(opaque);
+
+    qemu_log_mask(LOG_TRACE, "%s: 0x%" HWADDR_PRIx " [%u]\n",
+            __func__, offset, size);
+
+    if (offset > (ARRAY_SIZE(s->uicr_content) - size)) {
+        qemu_log_mask(LOG_GUEST_ERROR,
+                "%s: bad read offset 0x%" HWADDR_PRIx "\n", __func__, offset);
+        return 0;
+    }
+
+    return s->uicr_content[offset >> 2];
+}
+
+static void uicr_write(void *opaque, hwaddr offset, uint64_t value,
+        unsigned int size)
+{
+    Nrf51NVMCState *s = NRF51_NVMC(opaque);
+
+    qemu_log_mask(LOG_TRACE, "%s: 0x%" HWADDR_PRIx " [%u] = %" PRIu64 "\n",
+            __func__, offset, size, value);
+
+    if (offset > (ARRAY_SIZE(s->uicr_content) - size)) {
+        qemu_log_mask(LOG_GUEST_ERROR,
+                "%s: bad read offset 0x%" HWADDR_PRIx "\n", __func__, offset);
+        return;
+    }
+
+    s->uicr_content[offset >> 2] = value;
+}
+
+static const MemoryRegionOps uicr_ops = {
+    .read = uicr_read,
+    .write = uicr_write,
+    .impl.min_access_size = 4,
+    .impl.max_access_size = 4,
+    .impl.unaligned = false,
+};
+
 
 static uint64_t io_read(void *opaque, hwaddr offset, unsigned int size)
 {
@@ -192,6 +314,11 @@ static void nrf51_nvmc_init(Object *obj)
             NRF51_FICR_SIZE);
     memory_region_set_readonly(&s->ficr, true);
     sysbus_init_mmio(sbd, &s->ficr);
+
+    memcpy(s->uicr_content, uicr_fixture, ARRAY_SIZE(s->uicr_content));
+    memory_region_init_io(&s->uicr, NULL, &uicr_ops, NULL, "nrf51_soc.uicr",
+            NRF51_UICR_SIZE);
+    sysbus_init_mmio(sbd, &s->uicr);
 }
 
 static void nrf51_nvmc_realize(DeviceState *dev, Error **errp)

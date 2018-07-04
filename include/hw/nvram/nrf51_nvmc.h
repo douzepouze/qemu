@@ -13,6 +13,7 @@
  * QEMU interface:
  * + sysbus MMIO regions 0: NVMC peripheral registers
  * + sysbus MMIO regions 1: FICR peripheral registers
+ * + sysbus MMIO regions 2: UICR peripheral registers
  * + page_size property to set the page size in bytes.
  * + code_size property to set the code size in number of pages.
  *
@@ -37,12 +38,16 @@
 #define TYPE_NRF51_NVMC "nrf51_soc.nvmc"
 #define NRF51_NVMC(obj) OBJECT_CHECK(Nrf51NVMCState, (obj), TYPE_NRF51_NVMC)
 
+#define NRF51_UICR_FIXTURE_SIZE 64
+
 typedef struct Nrf51NVMCState {
     SysBusDevice parent_obj;
 
     MemoryRegion mmio;
     MemoryRegion ficr;
+    MemoryRegion uicr;
 
+    uint32_t uicr_content[NRF51_UICR_FIXTURE_SIZE];
     uint32_t code_size;
     uint16_t page_size;
     uint8_t *empty_page;
