@@ -60,8 +60,6 @@ static void test_nrf51_nvmc(void)
     writel(NVMC_BASE + NVMC_CONFIG, 0x00);
     g_assert_cmpuint(readl(NVMC_BASE + NVMC_CONFIG), ==, 0x00);
 
-    /* TODO: Test implementation based alignment */
-
     /* Test PCR0 */
     fill_and_erase(FLASH_BASE, PAGE_SIZE, NVMC_ERASEPCR0);
     fill_and_erase(FLASH_BASE + PAGE_SIZE, PAGE_SIZE, NVMC_ERASEPCR0);
@@ -101,7 +99,6 @@ static void test_nrf51_nvmc(void)
     for (hwaddr i = 0; i < UICR_SIZE / 4; i++) {
         g_assert_cmpuint(readl(UICR_BASE + i * 4), ==, 0xFFFFFFFF);
     }
-
 }
 
 
