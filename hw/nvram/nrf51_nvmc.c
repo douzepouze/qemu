@@ -33,7 +33,7 @@
 #define NRF51_NVMC_ERASEPCR1    0x508
 #define NRF51_NVMC_ERASEPCR0    0x510
 #define NRF51_NVMC_ERASEALL     0x50C
-#define NRF51_NVMC_ERASEUICR    0x512
+#define NRF51_NVMC_ERASEUICR    0x514
 #define NRF51_NVMC_ERASE        0x01
 
 #define NRF51_FICR_BASE         0x10000000
@@ -182,33 +182,34 @@ CUSTOMER[31]     0x0FC
 */
 
 static const uint32_t uicr_fixture[NRF51_UICR_FIXTURE_SIZE] = {
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, };
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
+};
 
 static uint64_t uicr_read(void *opaque, hwaddr offset, unsigned int size)
 {
     Nrf51NVMCState *s = NRF51_NVMC(opaque);
 
-    qemu_log_mask(LOG_TRACE, "%s: 0x%" HWADDR_PRIx " [%u]\n",
-            __func__, offset, size);
+    offset >>= 2;
 
-    if (offset > (ARRAY_SIZE(s->uicr_content) - size)) {
+    if (offset >= ARRAY_SIZE(s->uicr_content)) {
         qemu_log_mask(LOG_GUEST_ERROR,
                 "%s: bad read offset 0x%" HWADDR_PRIx "\n", __func__, offset);
         return 0;
     }
 
-    return s->uicr_content[offset >> 2];
+    return s->uicr_content[offset];
 }
 
 static void uicr_write(void *opaque, hwaddr offset, uint64_t value,
@@ -216,16 +217,15 @@ static void uicr_write(void *opaque, hwaddr offset, uint64_t value,
 {
     Nrf51NVMCState *s = NRF51_NVMC(opaque);
 
-    qemu_log_mask(LOG_TRACE, "%s: 0x%" HWADDR_PRIx " [%u] = %" PRIu64 "\n",
-            __func__, offset, size, value);
+    offset >>= 2;
 
-    if (offset > (ARRAY_SIZE(s->uicr_content) - size)) {
+    if (offset >= ARRAY_SIZE(s->uicr_content)) {
         qemu_log_mask(LOG_GUEST_ERROR,
                 "%s: bad read offset 0x%" HWADDR_PRIx "\n", __func__, offset);
         return;
     }
 
-    s->uicr_content[offset >> 2] = value;
+    s->uicr_content[offset] = value;
 }
 
 static const MemoryRegionOps uicr_ops = {
@@ -280,12 +280,12 @@ static void io_write(void *opaque, hwaddr offset, uint64_t value,
                 address_space_write(&s->as, i * s->page_size,
                 MEMTXATTRS_UNSPECIFIED, s->empty_page, s->page_size);
             }
+            memset(s->uicr_content, 0xFF, sizeof(s->uicr_content));
         }
         break;
     case NRF51_NVMC_ERASEUICR:
         if (value == NRF51_NVMC_ERASE) {
-            address_space_write(&s->as, NRF51_UICR_OFFSET,
-            MEMTXATTRS_UNSPECIFIED, s->empty_page, NRF51_UICR_SIZE);
+            memset(s->uicr_content, 0xFF, sizeof(s->uicr_content));
         }
         break;
 
@@ -310,13 +310,13 @@ static void nrf51_nvmc_init(Object *obj)
                           TYPE_NRF51_NVMC, NRF51_NVMC_SIZE);
     sysbus_init_mmio(sbd, &s->mmio);
 
-    memory_region_init_io(&s->ficr, NULL, &ficr_ops, NULL, "nrf51_soc.ficr",
+    memory_region_init_io(&s->ficr, NULL, &ficr_ops, s, "nrf51_soc.ficr",
             NRF51_FICR_SIZE);
     memory_region_set_readonly(&s->ficr, true);
     sysbus_init_mmio(sbd, &s->ficr);
 
-    memcpy(s->uicr_content, uicr_fixture, ARRAY_SIZE(s->uicr_content));
-    memory_region_init_io(&s->uicr, NULL, &uicr_ops, NULL, "nrf51_soc.uicr",
+    memcpy(s->uicr_content, uicr_fixture, sizeof(s->uicr_content));
+    memory_region_init_io(&s->uicr, NULL, &uicr_ops, s, "nrf51_soc.uicr",
             NRF51_UICR_SIZE);
     sysbus_init_mmio(sbd, &s->uicr);
 }
