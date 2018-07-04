@@ -57,41 +57,6 @@ struct {
 };
 
 
-static const uint32_t uicr_content[64] = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, };
-
-static uint64_t uicr_read(void *opaque, hwaddr offset, unsigned int size)
-{
-    qemu_log_mask(LOG_TRACE, "%s: 0x%" HWADDR_PRIx " [%u]\n",
-            __func__, offset, size);
-
-    if (offset > (ARRAY_SIZE(uicr_content) - size)) {
-        qemu_log_mask(LOG_GUEST_ERROR,
-                "%s: bad read offset 0x%" HWADDR_PRIx "\n", __func__, offset);
-        return 0;
-    }
-
-    return uicr_content[offset >> 2];
-}
-
-static const MemoryRegionOps uicr_ops = {
-    .read = uicr_read,
-    .impl.min_access_size = 4,
-    .impl.max_access_size = 4,
-    .impl.unaligned = false,
-};
-
-
 static uint64_t clock_read(void *opaque, hwaddr addr, unsigned int size)
 {
     qemu_log_mask(LOG_UNIMP, "%s: 0x%" HWADDR_PRIx " [%u]\n",
@@ -203,10 +168,7 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
     /* TODO move to NVMC initialization */
 
     /* UICR */
-    memory_region_init_io(&s->uicr, NULL, &uicr_ops, NULL, "nrf51_soc.uicr",
-            UICR_SIZE);
-    memory_region_set_readonly(&s->uicr, true);
-    memory_region_add_subregion_overlap(&s->container, UICR_BASE, &s->uicr, 0);
+    /* TODO move to NVMC initialization */
 
     /* UART */
     qdev_prop_set_chr(DEVICE(&s->uart), "chardev", serial_hd(0));
