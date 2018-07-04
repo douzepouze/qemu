@@ -11,8 +11,8 @@
  * + User Information Configuration Registers (UICR)
  *
  * QEMU interface:
- * + sysbus MMIO regions 0: Memory Region with registers
- *   to be mapped to the peripherals instance address by the SOC.
+ * + sysbus MMIO regions 0: NVMC peripheral registers
+ * + sysbus MMIO regions 1: FICR peripheral registers
  * + page_size property to set the page size in bytes.
  * + code_size property to set the code size in number of pages.
  *
@@ -41,6 +41,7 @@ typedef struct Nrf51NVMCState {
     SysBusDevice parent_obj;
 
     MemoryRegion mmio;
+    MemoryRegion ficr;
 
     uint32_t code_size;
     uint16_t page_size;

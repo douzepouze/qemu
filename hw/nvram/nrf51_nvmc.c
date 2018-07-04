@@ -36,8 +36,84 @@
 #define NRF51_NVMC_ERASEUICR    0x512
 #define NRF51_NVMC_ERASE        0x01
 
+#define NRF51_FICR_BASE         0x10000000
+#define NRF51_FICR_SIZE         0x100
+
 #define NRF51_UICR_OFFSET       0x10001000UL
 #define NRF51_UICR_SIZE         0x100
+
+
+/*
+FICR Registers Assignments
+CODEPAGESIZE      0x010
+CODESIZE          0x014
+CLENR0            0x028
+PPFC              0x02C
+NUMRAMBLOCK       0x034
+SIZERAMBLOCKS     0x038
+SIZERAMBLOCK[0]   0x038
+SIZERAMBLOCK[1]   0x03C
+SIZERAMBLOCK[2]   0x040
+SIZERAMBLOCK[3]   0x044
+CONFIGID          0x05C
+DEVICEID[0]       0x060
+DEVICEID[1]       0x064
+ER[0]             0x080
+ER[1]             0x084
+ER[2]             0x088
+ER[3]             0x08C
+IR[0]             0x090
+IR[1]             0x094
+IR[2]             0x098
+IR[3]             0x09C
+DEVICEADDRTYPE    0x0A0
+DEVICEADDR[0]     0x0A4
+DEVICEADDR[1]     0x0A8
+OVERRIDEEN        0x0AC
+NRF_1MBIT[0]      0x0B0
+NRF_1MBIT[1]      0x0B4
+NRF_1MBIT[2]      0x0B8
+NRF_1MBIT[3]      0x0BC
+NRF_1MBIT[4]      0x0C0
+BLE_1MBIT[0]      0x0EC
+BLE_1MBIT[1]      0x0F0
+BLE_1MBIT[2]      0x0F4
+BLE_1MBIT[3]      0x0F8
+BLE_1MBIT[4]      0x0FC
+*/
+static const uint32_t ficr_content[64] = {
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000400,
+        0x00000100, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000002, 0x00002000,
+        0x00002000, 0x00002000, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000003,
+        0x12345678, 0x9ABCDEF1, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
+};
+
+static uint64_t ficr_read(void *opaque, hwaddr offset, unsigned int size)
+{
+    if (offset > (ARRAY_SIZE(ficr_content) - size)) {
+        qemu_log_mask(LOG_GUEST_ERROR,
+                "%s: bad read offset 0x%" HWADDR_PRIx "\n", __func__, offset);
+        return 0;
+    }
+
+    return ficr_content[offset >> 2];
+}
+
+static const MemoryRegionOps ficr_ops = {
+    .read = ficr_read,
+    .impl.min_access_size = 4,
+    .impl.max_access_size = 4,
+    .impl.unaligned = false,
+};
 
 static uint64_t io_read(void *opaque, hwaddr offset, unsigned int size)
 {
@@ -111,6 +187,11 @@ static void nrf51_nvmc_init(Object *obj)
     memory_region_init_io(&s->mmio, obj, &io_ops, s,
                           TYPE_NRF51_NVMC, NRF51_NVMC_SIZE);
     sysbus_init_mmio(sbd, &s->mmio);
+
+    memory_region_init_io(&s->ficr, NULL, &ficr_ops, NULL, "nrf51_soc.ficr",
+            NRF51_FICR_SIZE);
+    memory_region_set_readonly(&s->ficr, true);
+    sysbus_init_mmio(sbd, &s->ficr);
 }
 
 static void nrf51_nvmc_realize(DeviceState *dev, Error **errp)
