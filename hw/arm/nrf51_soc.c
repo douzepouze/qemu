@@ -25,9 +25,6 @@
 
 #define FLASH_BASE      0x00000000
 
-#define FICR_BASE       0x10000000
-#define FICR_SIZE       0x100
-
 #define UICR_BASE       0x10001000
 #define UICR_SIZE       0x100
 
@@ -59,78 +56,6 @@ struct {
         {.ram_size = 32, .flash_size = 256 },
 };
 
-/*
-FICR Registers Assignments
-CODEPAGESIZE      0x010      [4,
-CODESIZE          0x014       5,
-CLENR0            0x028       10,
-PPFC              0x02C       11,
-NUMRAMBLOCK       0x034       13,
-SIZERAMBLOCKS     0x038       14,
-SIZERAMBLOCK[0]   0x038       14,
-SIZERAMBLOCK[1]   0x03C       15,
-SIZERAMBLOCK[2]   0x040       16,
-SIZERAMBLOCK[3]   0x044       17,
-CONFIGID          0x05C       23,
-DEVICEID[0]       0x060       24,
-DEVICEID[1]       0x064       25,
-ER[0]             0x080       32,
-ER[1]             0x084       33,
-ER[2]             0x088       34,
-ER[3]             0x08C       35,
-IR[0]             0x090       36,
-IR[1]             0x094       37,
-IR[2]             0x098       38,
-IR[3]             0x09C       39,
-DEVICEADDRTYPE    0x0A0       40,
-DEVICEADDR[0]     0x0A4       41,
-DEVICEADDR[1]     0x0A8       42,
-OVERRIDEEN        0x0AC       43,
-NRF_1MBIT[0]      0x0B0       44,
-NRF_1MBIT[1]      0x0B4       45,
-NRF_1MBIT[2]      0x0B8       46,
-NRF_1MBIT[3]      0x0BC       47,
-NRF_1MBIT[4]      0x0C0       48,
-BLE_1MBIT[0]      0x0EC       59,
-BLE_1MBIT[1]      0x0F0       60,
-BLE_1MBIT[2]      0x0F4       61,
-BLE_1MBIT[3]      0x0F8       62,
-BLE_1MBIT[4]      0x0FC       63]
-*/
-
-static const uint32_t ficr_content[64] = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0x00000400, 0x00000100, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000002,
-        0x00002000, 0x00002000, 0x00002000, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000003, 0x12345678, 0x9ABCDEF1,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-        0xFFFFFFFF, };
-
-static uint64_t ficr_read(void *opaque, hwaddr offset, unsigned int size)
-{
-    qemu_log_mask(LOG_TRACE, "%s: 0x%" HWADDR_PRIx " [%u]\n",
-            __func__, offset, size);
-
-    if (offset > (ARRAY_SIZE(ficr_content) - size)) {
-        qemu_log_mask(LOG_GUEST_ERROR,
-                "%s: bad read offset 0x%" HWADDR_PRIx "\n", __func__, offset);
-        return 0;
-    }
-
-    return ficr_content[offset >> 2];
-}
-
-static const MemoryRegionOps ficr_ops = {
-    .read = ficr_read,
-    .impl.min_access_size = 4,
-    .impl.max_access_size = 4,
-    .impl.unaligned = false,
-};
 
 static const uint32_t uicr_content[64] = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
         0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
@@ -275,10 +200,7 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
     memory_region_add_subregion_overlap(&s->container, IOMEM_BASE, mr, -1500);
 
     /* FICR */
-    memory_region_init_io(&s->ficr, NULL, &ficr_ops, NULL, "nrf51_soc.ficr",
-            FICR_SIZE);
-    memory_region_set_readonly(&s->ficr, true);
-    memory_region_add_subregion_overlap(&s->container, FICR_BASE, &s->ficr, 0);
+    /* TODO move to NVMC initialization */
 
     /* UICR */
     memory_region_init_io(&s->uicr, NULL, &uicr_ops, NULL, "nrf51_soc.uicr",
