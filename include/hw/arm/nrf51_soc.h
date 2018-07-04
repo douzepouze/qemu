@@ -1,5 +1,5 @@
 /*
- * Nordic Semiconductor nRF51  SoC
+ * Nordic Semiconductor nRF51 SoC
  *
  * Copyright 2018 Joel Stanley <joel@jms.id.au>
  *
