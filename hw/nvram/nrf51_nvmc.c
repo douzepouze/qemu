@@ -1,9 +1,10 @@
 /*
- * Nordic Semiconductor nRF51 non-volatile memory
+ * Nordic Semiconductor nRF51 non-volatile memory controller
  *
- * This peripheral manages access to flash memory included on the SOC.
  * It provides an interface to erase regions in flash memory.
  * Furthermore it provides the user and factory information registers.
+ *
+ * Refernce Manual: http://infocenter.nordicsemi.com/pdf/nRF51_RM_v3.0.pdf
  *
  * See nRF51 reference manual and product sheet sections:
  * + Non-Volatile Memory Controller (NVMC)
