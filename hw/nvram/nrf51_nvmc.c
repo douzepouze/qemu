@@ -248,7 +248,7 @@ static uint64_t io_read(void *opaque, hwaddr offset, unsigned int size)
         r = NRF51_NVMC_READY_READY;
         break;
     case NRF51_NVMC_CONFIG:
-        r = s->state.config;
+        r = s->config;
         break;
     default:
         qemu_log_mask(LOG_GUEST_ERROR,
@@ -265,7 +265,7 @@ static void io_write(void *opaque, hwaddr offset, uint64_t value,
 
     switch (offset) {
     case NRF51_NVMC_CONFIG:
-        s->state.config = value & NRF51_NVMC_CONFIG_MASK;
+        s->config = value & NRF51_NVMC_CONFIG_MASK;
         break;
     case NRF51_NVMC_ERASEPCR0:
     case NRF51_NVMC_ERASEPCR1:

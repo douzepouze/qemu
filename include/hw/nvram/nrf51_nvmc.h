@@ -48,9 +48,7 @@ typedef struct Nrf51NVMCState {
     MemoryRegion *mr;
     AddressSpace as;
 
-    struct {
-        uint32_t config:2;
-    } state;
+    uint32_t config;
 
 } Nrf51NVMCState;
 
