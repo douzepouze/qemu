@@ -101,8 +101,6 @@ static void test_nrf51_nvmc(void)
     }
 }
 
-
-
 int main(int argc, char **argv)
 {
     int ret;
