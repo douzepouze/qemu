@@ -17,10 +17,10 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <hw/nvram/nrf51_nvm.h>
 #include "qemu/osdep.h"
 #include "qapi/error.h"
 #include "qemu/log.h"
-#include "hw/nvram/nrf51_nvmc.h"
 #include "exec/address-spaces.h"
 
 #define NRF51_NVMC_SIZE         0x1000

@@ -10,12 +10,12 @@
 #ifndef NRF51_SOC_H
 #define NRF51_SOC_H
 
+#include <hw/nvram/nrf51_nvm.h>
 #include "qemu/osdep.h"
 #include "hw/sysbus.h"
 #include "hw/arm/armv7m.h"
 #include "hw/misc/unimp.h"
 #include "hw/char/nrf51_uart.h"
-#include "hw/nvram/nrf51_nvmc.h"
 #include "hw/misc/nrf51_rng.h"
 
 
