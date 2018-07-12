@@ -10,13 +10,13 @@
 #ifndef NRF51_SOC_H
 #define NRF51_SOC_H
 
-#include <hw/nvram/nrf51_nvm.h>
 #include "qemu/osdep.h"
 #include "hw/sysbus.h"
 #include "hw/arm/armv7m.h"
 #include "hw/misc/unimp.h"
 #include "hw/char/nrf51_uart.h"
 #include "hw/misc/nrf51_rng.h"
+#include "hw/nvram/nrf51_nvm.h"
 
 
 #define TYPE_NRF51_SOC "nrf51-soc"
@@ -32,13 +32,13 @@ typedef struct NRF51State {
     ARMv7MState armv7m;
 
     UnimplementedDeviceState mmio;
+    Nrf51CODEState code;
     Nrf51UART uart;
     Nrf51NVMCState nvmc;
     Nrf51RNGState rng;
 
     MemoryRegion container;
     MemoryRegion sram;
-    MemoryRegion flash;
     MemoryRegion ficr;
     MemoryRegion uicr;
     MemoryRegion clock;

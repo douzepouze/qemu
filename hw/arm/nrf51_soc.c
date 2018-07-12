@@ -23,7 +23,7 @@
 #include "hw/arm/nrf51_soc.h"
 
 
-#define FLASH_BASE      0x00000000
+#define CODE_BASE       0x00000000
 
 #define FICR_BASE       0x10000000
 
@@ -83,6 +83,10 @@ static void nrf51_soc_init(Object *obj)
     memory_region_init(&s->container, obj, "microbit-container",
             UINT64_MAX);
 
+    object_initialize(&s->code, sizeof(s->code), TYPE_NRF51_CODE);
+    object_property_add_child(obj, "code", OBJECT(&s->code), &error_abort);
+    qdev_set_parent_bus(DEVICE(&s->code), sysbus_get_default());
+
     /* TODO: Change to armv6m when cortex-m0 core is available */
     object_initialize(&s->armv7m, sizeof(s->armv7m), TYPE_ARMV7M);
     object_property_add_child(obj, "armv7m", OBJECT(&s->armv7m), &error_abort);
@@ -131,15 +135,22 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
     }
     memory_region_add_subregion(&s->container, SRAM_BASE, &s->sram);
 
-    /* FLASH */
-    memory_region_init_ram(&s->flash, NULL, "nrf51_soc.flash",
-            NRF51VariantAttributes[s->part_variant].flash_size * PAGE_SIZE,
+    /* CODE */
+    object_property_set_uint(OBJECT(&s->code),
+            NRF51VariantAttributes[s->part_variant].flash_size, "code_size",
             &err);
     if (err) {
         error_propagate(errp, err);
         return;
     }
-    memory_region_add_subregion(&s->container, FLASH_BASE, &s->flash);
+    object_property_set_bool(OBJECT(&s->code), true, "realized", &err);
+    if (err) {
+        error_propagate(errp, err);
+        return;
+    }
+
+    mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->code), 0);
+    memory_region_add_subregion_overlap(&s->container, CODE_BASE, mr, 0);
 
     /* MCU */
     qdev_prop_set_uint32(DEVICE(&s->armv7m), "num-irq", 60);
@@ -179,19 +190,6 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
             qdev_get_gpio_in(DEVICE(&s->armv7m), BASE_TO_IRQ(UART_BASE)));
 
     /* NVMC */
-    object_property_set_link(OBJECT(&s->nvmc), OBJECT(&s->container),
-                                         "memory", &err);
-    if (err) {
-        error_propagate(errp, err);
-        return;
-    }
-    object_property_set_uint(OBJECT(&s->nvmc),
-            NRF51VariantAttributes[s->part_variant].flash_size, "code_size",
-            &err);
-    if (err) {
-        error_propagate(errp, err);
-        return;
-    }
     object_property_set_bool(OBJECT(&s->nvmc), true, "realized", &err);
     if (err) {
         error_propagate(errp, err);
@@ -200,10 +198,6 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
 
     mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->nvmc), 0);
     memory_region_add_subregion_overlap(&s->container, NVMC_BASE, mr, 0);
-    mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->nvmc), 1);
-    memory_region_add_subregion_overlap(&s->container, FICR_BASE, mr, 0);
-    mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->nvmc), 2);
-    memory_region_add_subregion_overlap(&s->container, UICR_BASE, mr, 0);
 
     /* RNG */
     object_property_set_bool(OBJECT(&s->rng), true, "realized", &err);
