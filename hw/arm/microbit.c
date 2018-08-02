@@ -9,7 +9,6 @@
 
 #include "qemu/osdep.h"
 #include "qapi/error.h"
-#include "sysemu/qtest.h"
 #include "hw/boards.h"
 #include "hw/arm/arm.h"
 
@@ -34,7 +33,6 @@ static void microbit_init(MachineState *machine)
     qdev_prop_set_uint16(DEVICE(matrix), "rows", 3);
     qdev_prop_set_uint16(DEVICE(matrix), "cols", 9);
     object_property_set_bool(OBJECT(matrix), true, "realized", &error_fatal);
-
 
     qdev_connect_gpio_out(soc, 4, qdev_get_gpio_in_named(matrix, "col", 0));
     qdev_connect_gpio_out(soc, 5, qdev_get_gpio_in_named(matrix, "col", 1));
@@ -68,7 +66,6 @@ static void microbit_reset(void)
     }
 }
 
-
 static void microbit_machine_init(MachineClass *mc)
 {
     mc->desc = "BBC micro:bit";
@@ -82,12 +79,14 @@ static void microbit_machine_init_class_init(ObjectClass *oc, void *data)
     MachineClass *mc = MACHINE_CLASS(oc);
     microbit_machine_init(mc);
 }
+
 static const TypeInfo microbit_machine_info = {
     .name       = TYPE_MICROBIT_MACHINE,
     .parent     = TYPE_MACHINE,
     .instance_size = sizeof(MicrobitMachineState),
     .class_init = microbit_machine_init_class_init,
 };
+
 static void microbit_machine_types(void)
 {
     type_register_static(&microbit_machine_info);
