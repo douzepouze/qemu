@@ -41,7 +41,7 @@ static void microbit_init(MachineState *machine)
 
     object_property_set_bool(soc, true, "realized", &error_abort);
 
-    armv7m_load_kernel(ARM_CPU(first_cpu), machine->kernel_filename,
+    arm_m_profile_load_kernel(ARM_CPU(first_cpu), machine->kernel_filename,
             NRF51_SOC(soc)->flash_size);
 }
 
