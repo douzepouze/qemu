@@ -43,6 +43,8 @@
 
 #define RNG_BASE        0x4000D000
 
+#define GPIO_BASE       0x50000000
+
 #define PAGE_SIZE       1024
 
 #define BASE_TO_IRQ(base) ((base >> 12) & 0x1F)
@@ -107,6 +109,10 @@ static void nrf51_soc_init(Object *obj)
     object_initialize(&s->rng, sizeof(s->rng), TYPE_NRF51_RNG);
     object_property_add_child(obj, "rng", OBJECT(&s->rng), &error_abort);
     qdev_set_parent_bus(DEVICE(&s->rng), sysbus_get_default());
+
+    object_initialize(&s->gpio, sizeof(s->gpio), TYPE_NRF51_GPIO);
+    object_property_add_child(obj, "gpio", OBJECT(&s->gpio), &error_abort);
+    qdev_set_parent_bus(DEVICE(&s->gpio), sysbus_get_default());
 }
 
 
@@ -216,6 +222,19 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
     memory_region_add_subregion_overlap(&s->container, RNG_BASE, mr, 0);
     qdev_connect_gpio_out_named(DEVICE(&s->rng), "irq", 0,
             qdev_get_gpio_in(DEVICE(&s->armv7m), BASE_TO_IRQ(RNG_BASE)));
+
+    /* GPIO */
+    object_property_set_bool(OBJECT(&s->gpio), true, "realized", &err);
+    if (err) {
+        error_propagate(errp, err);
+        return;
+    }
+
+    mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->gpio), 0);
+    memory_region_add_subregion_overlap(&s->container, GPIO_BASE, mr, 0);
+
+    /* Pass all GPIOs to the SOC layer so they are available to the board */
+    qdev_pass_gpios(DEVICE(&s->gpio), dev_soc, NULL);
 
     /* STUB Peripherals */
     memory_region_init_io(&s->clock, NULL, &clock_ops, NULL, "nrf51_soc.clock", 0x1000);

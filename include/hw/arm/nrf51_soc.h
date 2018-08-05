@@ -17,6 +17,7 @@
 #include "hw/char/nrf51_uart.h"
 #include "hw/misc/nrf51_rng.h"
 #include "hw/nvram/nrf51_nvm.h"
+#include "hw/gpio/nrf51_gpio.h"
 
 
 #define TYPE_NRF51_SOC "nrf51-soc"
@@ -35,6 +36,7 @@ typedef struct NRF51State {
     Nrf51UART uart;
     Nrf51NVMState nvm;
     Nrf51RNGState rng;
+    Nrf51GPIOState gpio;
 
     MemoryRegion container;
     MemoryRegion sram;
