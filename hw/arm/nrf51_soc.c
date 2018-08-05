@@ -24,25 +24,17 @@
 
 
 #define FLASH_BASE      0x00000000
-
 #define FICR_BASE       0x10000000
-
 #define UICR_BASE       0x10001000
-
 #define SRAM_BASE       0x20000000
 
 #define IOMEM_BASE      0x40000000
 #define IOMEM_SIZE      0x20000000
 
 #define UART_BASE       0x40002000
-#define UART_SIZE       0x1000
-#define UART_INT        2
-
-#define NVMC_BASE       0x4001E000
-#define NVMC_SIZE       0x1000
-
+#define TIMER_BASE      0x40008000
 #define RNG_BASE        0x4000D000
-
+#define NVMC_BASE       0x4001E000
 #define GPIO_BASE       0x50000000
 
 #define PAGE_SIZE       1024
@@ -71,7 +63,6 @@ static void clock_write(void *opaque, hwaddr addr, uint64_t data, unsigned int s
 {
     qemu_log_mask(LOG_UNIMP, "%s: 0x%" HWADDR_PRIx " <- 0x%" PRIx64 " [%u]\n", __func__, addr, data, size);
 }
-
 
 static const MemoryRegionOps clock_ops = {
     .read = clock_read,
@@ -113,8 +104,12 @@ static void nrf51_soc_init(Object *obj)
     object_initialize(&s->gpio, sizeof(s->gpio), TYPE_NRF51_GPIO);
     object_property_add_child(obj, "gpio", OBJECT(&s->gpio), &error_abort);
     qdev_set_parent_bus(DEVICE(&s->gpio), sysbus_get_default());
-}
 
+    object_initialize(&s->timer, sizeof(s->timer), TYPE_NRF51_TIMER);
+    object_property_add_child(obj, "timer0", OBJECT(&s->timer), &error_abort);
+    qdev_set_parent_bus(DEVICE(&s->timer), sysbus_get_default());
+
+}
 
 static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
 {
@@ -184,6 +179,19 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
     sysbus_connect_irq(SYS_BUS_DEVICE(&s->uart), 0,
                        qdev_get_gpio_in(DEVICE(&s->armv7m),
                        BASE_TO_IRQ(UART_BASE)));
+
+    /* TIMER0 */
+     object_property_set_bool(OBJECT(&s->timer), true, "realized", &err);
+     if (err) {
+        error_propagate(errp, err);
+        return;
+     }
+
+     mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->timer), 0);
+     memory_region_add_subregion_overlap(&s->container, TIMER_BASE, mr, 0);
+     sysbus_connect_irq(SYS_BUS_DEVICE(&s->timer), 0,
+                        qdev_get_gpio_in(DEVICE(&s->armv7m),
+                        BASE_TO_IRQ(TIMER_BASE)));
 
     /* NVMC */
     object_property_set_link(OBJECT(&s->nvm), OBJECT(&s->container),
