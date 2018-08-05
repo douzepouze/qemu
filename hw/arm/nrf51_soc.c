@@ -23,8 +23,6 @@
 
 #include "hw/arm/nrf51_soc.h"
 
-#define IOMEM_BASE      0x40000000
-#define IOMEM_SIZE      0x20000000
 
 #define FLASH_BASE      0x00000000
 
@@ -33,9 +31,14 @@
 
 #define SRAM_BASE       0x20000000
 
+#define IOMEM_BASE      0x40000000
+#define IOMEM_SIZE      0x20000000
+
 #define UART_BASE       0x40002000
 #define UART_SIZE       0x1000
 #define UART_INT        2
+
+#define RNG_BASE        0x4000D000
 
 #define PAGE_SIZE       1024
 
@@ -179,7 +182,6 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
         return;
     }
 
-
     object_property_set_bool(OBJECT(&s->armv7m), true, "realized", &err);
     if (err) {
         error_propagate(errp, err);
@@ -206,7 +208,7 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
     mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->uart), 0);
     memory_region_add_subregion_overlap(&s->container, UART_BASE, mr, 0);
     qdev_connect_gpio_out_named(DEVICE(&s->uart), "irq", 0,
-            qdev_get_gpio_in(DEVICE(&s->armv7m), UART_INT));
+            qdev_get_gpio_in(DEVICE(&s->armv7m), BASE_TO_IRQ(UART_BASE)));
 
     /* STUB Peripherals */
     memory_region_init_io(&s->clock, NULL, &clock_ops, NULL, "nrf51_soc.clock", 0x1000);
