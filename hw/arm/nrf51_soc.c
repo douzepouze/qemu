@@ -181,8 +181,9 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
 
     mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->uart), 0);
     memory_region_add_subregion_overlap(&s->container, UART_BASE, mr, 0);
-    qdev_connect_gpio_out_named(DEVICE(&s->uart), "irq", 0,
-            qdev_get_gpio_in(DEVICE(&s->armv7m), BASE_TO_IRQ(UART_BASE)));
+    sysbus_connect_irq(SYS_BUS_DEVICE(&s->uart), 0,
+                       qdev_get_gpio_in(DEVICE(&s->armv7m),
+                       BASE_TO_IRQ(UART_BASE)));
 
     /* NVMC */
     object_property_set_link(OBJECT(&s->nvm), OBJECT(&s->container),
