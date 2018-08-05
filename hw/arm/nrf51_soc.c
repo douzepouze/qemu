@@ -39,6 +39,8 @@
 
 #define PAGE_SIZE       1024
 
+#define BASE_TO_IRQ(base) ((base >> 12) & 0x1F)
+
 
 struct {
   hwaddr ram_size;
