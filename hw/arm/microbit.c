@@ -27,11 +27,11 @@ static void microbit_init(MachineState *machine)
     object_property_add_child(OBJECT(machine), "nrf51", soc, &error_fatal);
     object_property_set_link(soc, OBJECT(system_memory),
                              "memory", &error_abort);
+    qdev_prop_set_uint32(DEVICE(soc), "variant", NRF51_VARIANT_AA);
 
     object_property_set_bool(soc, true, "realized", &error_abort);
 
-    armv7m_load_kernel(ARM_CPU(first_cpu), machine->kernel_filename,
-            NRF51_SOC(soc)->flash_size);
+    armv7m_load_kernel(ARM_CPU(first_cpu), machine->kernel_filename, 0x00);
 }
 
 

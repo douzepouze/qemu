@@ -29,14 +29,23 @@ typedef struct NRF51State {
     MemoryRegion sram;
     MemoryRegion flash;
 
-    uint32_t sram_size;
-    uint32_t flash_size;
-
     MemoryRegion *board_memory;
 
     MemoryRegion container;
 
+    /* Properties */
+    int32_t part_variant;
 } NRF51State;
+
+
+/* Variants as described in nRF51 product specification section 10.6 table 73 */
+typedef enum {
+    NRF51_VARIANT_INVALID = -1,
+    NRF51_VARIANT_AA = 0,
+    NRF51_VARIANT_AB = 1,
+    NRF51_VARIANT_AC = 2,
+    NRF51_VARIANT_MAX = 3
+} NRF51Variants;
 
 #endif
 
