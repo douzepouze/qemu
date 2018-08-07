@@ -38,6 +38,9 @@
 #define NRF51822_FLASH_SIZE     (256 * 1024)
 #define NRF51822_SRAM_SIZE      (16 * 1024)
 
+/* IRQ lines can be derived from peripheral base addresses */
+#define BASE_TO_IRQ(base) (((base) >> 12) & 0x1F)
+
 static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
 {
     NRF51State *s = NRF51_SOC(dev_soc);
