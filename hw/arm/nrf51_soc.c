@@ -1,8 +1,10 @@
 /*
  * Nordic Semiconductor nRF51 SoC
- * http://infocenter.nordicsemi.com/pdf/nRF51_RM_v3.0.1.pdf
+ * Reference Manual: http://infocenter.nordicsemi.com/pdf/nRF51_RM_v3.0.pdf
+ * Product Spec: http://infocenter.nordicsemi.com/pdf/nRF51822_PS_v3.1.pdf
  *
  * Copyright 2018 Joel Stanley <joel@jms.id.au>
+ * Copyright 2018 Steffen Görtz <contrib@steffen-goertz.de>
  *
  * This code is licensed under the GPL version 2 or later.  See
  * the COPYING file in the top-level directory.

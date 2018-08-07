@@ -3,6 +3,7 @@
  * http://tech.microbit.org/hardware/
  *
  * Copyright 2018 Joel Stanley <joel@jms.id.au>
+ * Copyright 2018 Steffen Görtz <contrib@steffen-goertz.de>
  *
  * This code is licensed under the GPL version 2 or later.  See
  * the COPYING file in the top-level directory.
