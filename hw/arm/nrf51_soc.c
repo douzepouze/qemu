@@ -66,8 +66,17 @@ static void nrf51_soc_realize(DeviceState *dev_soc, Error **errp)
     }
 
     object_property_set_link(OBJECT(&s->cpu), OBJECT(&s->container), "memory",
-            &err);
-    object_property_set_bool(OBJECT(&s->cpu), true, "realized", &err);
+                            &err);
+    if (err) {
+        error_propagate(errp, err);
+        return;
+    }
+    object_property_set_bool(OBJECT(&s->cpu), true, "realized",
+                             &err);
+    if (err) {
+        error_propagate(errp, err);
+        return;
+    }
 
     memory_region_add_subregion_overlap(&s->container, 0, s->board_memory, -1);
 
