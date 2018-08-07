@@ -14,22 +14,11 @@
 #include "hw/arm/arm.h"
 #include "exec/address-spaces.h"
 
-#include "hw/arm/nrf51_soc.h"
-
-typedef struct {
-    MachineState parent;
-
-    NRF51State nrf51;
-} MICROBITMachineState;
-
-#define TYPE_MICROBIT_MACHINE "microbit"
-
-#define MICROBIT_MACHINE(obj) \
-    OBJECT_CHECK(MICROBITMachineState, obj, TYPE_MICROBIT_MACHINE)
+#include "hw/arm/microbit.h"
 
 static void microbit_init(MachineState *machine)
 {
-    MICROBITMachineState *s = g_new(MICROBITMachineState, 1);
+    MicrobitMachineState *s = MICROBIT_MACHINE(machine);
     MemoryRegion *system_memory = get_system_memory();
     Object *soc;
 
@@ -45,10 +34,31 @@ static void microbit_init(MachineState *machine)
             NRF51_SOC(soc)->flash_size);
 }
 
+
 static void microbit_machine_init(MachineClass *mc)
 {
     mc->desc = "BBC micro:bit";
     mc->init = microbit_init;
     mc->max_cpus = 1;
 }
-DEFINE_MACHINE("microbit", microbit_machine_init);
+
+static void microbit_machine_init_class_init(ObjectClass *oc, void *data)
+{
+    MachineClass *mc = MACHINE_CLASS(oc);
+    microbit_machine_init(mc);
+}
+
+static const TypeInfo microbit_machine_info = {
+    .name       = TYPE_MICROBIT_MACHINE,
+    .parent     = TYPE_MACHINE,
+    .instance_size = sizeof(MicrobitMachineState),
+    .class_init = microbit_machine_init_class_init,
+};
+
+static void microbit_machine_types(void)
+{
+    type_register_static(&microbit_machine_info);
+}
+
+type_init(microbit_machine_types)
+
