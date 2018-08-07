@@ -81,7 +81,7 @@ static void nrf51_soc_init(Object *obj)
 
     memory_region_init(&s->container, obj, "nrf51-container", UINT64_MAX);
 
-    object_initialize(&s->cpu, sizeof(s->cpu), TYPE_ARM_M_PROFILE);
+    object_initialize(&s->cpu, sizeof(s->cpu), TYPE_ARMV7M);
     object_property_add_child(OBJECT(s), "armv6m", OBJECT(&s->cpu), &error_abort);
     qdev_set_parent_bus(DEVICE(&s->cpu), sysbus_get_default());
     qdev_prop_set_string(DEVICE(&s->cpu), "cpu-type", ARM_CPU_TYPE_NAME("cortex-m0"));

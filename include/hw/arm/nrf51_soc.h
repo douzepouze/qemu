@@ -12,7 +12,7 @@
 
 #include "qemu/osdep.h"
 #include "hw/sysbus.h"
-#include "hw/arm/arm-m-profile.h"
+#include "hw/arm/armv7m.h"
 
 #define TYPE_NRF51_SOC "nrf51-soc"
 #define NRF51_SOC(obj) \
@@ -23,7 +23,7 @@ typedef struct NRF51State {
     SysBusDevice parent_obj;
 
     /*< public >*/
-    ARMMProfileState cpu;
+    ARMv7MState cpu;
 
     MemoryRegion iomem;
     MemoryRegion sram;
