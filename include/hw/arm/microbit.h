@@ -24,6 +24,7 @@ typedef struct MicrobitMachineState {
     MachineState parent_obj;
 
     NRF51State nrf51;
+    LEDMatrixState matrix;
 } MicrobitMachineState;
 
 #endif
