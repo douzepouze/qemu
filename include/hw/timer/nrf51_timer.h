@@ -63,6 +63,7 @@ typedef struct NRF51TimerState {
     int64_t time_offset;
     uint32_t counter;
     uint32_t counter_inc;
+    /* Time that passes between one timer tick in nanoseconds */
     uint64_t tick_period;
 
     bool running;

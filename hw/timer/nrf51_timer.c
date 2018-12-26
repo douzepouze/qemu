@@ -23,18 +23,8 @@ static uint32_t const bitwidths[] = {16, 8, 24, 32};
 
 static void set_prescaler(NRF51TimerState *s, uint32_t prescaler)
 {
-    uint64_t period;
     s->prescaler = prescaler;
-
-    period = ((1UL << s->prescaler) * TIMER_TICK_PS) / 1000;
-    /* Limit minimum timeout period to 10us to allow some progress */
-    if (period < MINIMUM_PERIOD) {
-        s->tick_period = MINIMUM_PERIOD;
-        s->counter_inc = MINIMUM_PERIOD / period;
-    } else {
-        s->tick_period = period;
-        s->counter_inc = 1;
-    }
+    s->tick_period = ((1UL << s->prescaler) * TIMER_TICK_PS) / 1000;
 }
 
 static void update_irq(NRF51TimerState *s)
@@ -48,10 +38,48 @@ static void update_irq(NRF51TimerState *s)
     qemu_set_irq(s->irq, flag);
 }
 
+static void timer_set(NRF51TimerState *s) {
+    size_t i;
+    uint64_t tick_diff, time_diff;
+    uint64_t tick_diff_min = BIT(bitwidths[s->bitmode]);
+
+
+    for (i = 0; i < NRF51_TIMER_REG_COUNT; i++) {
+        if (s->counter < s->cc[i]) {
+            tick_diff = s->cc[i] - s->counter;
+        } else {
+            tick_diff = (s->cc[i] + BIT(bitwidths[s->bitmode])) - s->counter;
+        }
+
+        if (tick_diff < tick_diff_min) {
+            tick_diff_min = tick_diff;
+        }
+    }
+
+    /* Translate the difference into time and save it for increments */
+    time_diff = s->tick_period * tick_diff_min;
+
+    /* Limit minimum timeout period to 10us to allow some progress */
+    if (time_diff < MINIMUM_PERIOD) {
+        time_diff = MINIMUM_PERIOD;
+        s->counter_inc = MINIMUM_PERIOD / s->tick_period;
+    } else {
+        s->counter_inc = tick_diff_min;
+    }
+
+    s->time_offset += time_diff;
+    timer_mod_ns(&s->timer, s->time_offset);
+}
+
+static void timer_partial_progress(NRF51TimerState *s, uint64_t now) {
+    ;
+}
+
 static void timer_expire(void *opaque)
 {
     NRF51TimerState *s = NRF51_TIMER(opaque);
     bool should_stop = false;
+    bool should_clear = false;
     uint32_t counter = s->counter;
     size_t i;
     uint64_t diff;
@@ -67,16 +95,17 @@ static void timer_expire(void *opaque)
             if (diff <= s->counter_inc) {
                 s->events_compare[i] = true;
 
-                if (s->shorts & BIT(i)) {
-                    s->counter = 0;
-                }
-
+                should_clear |= s->shorts & BIT(i);
                 should_stop |= s->shorts & BIT(i + 8);
             }
         }
 
-        s->counter += s->counter_inc;
-        s->counter &= (BIT(bitwidths[s->bitmode]) - 1);
+        if (!should_clear) {
+            s->counter += s->counter_inc;
+            s->counter &= (BIT(bitwidths[s->bitmode]) - 1);
+        } else {
+            s->counter = 0;
+        }
 
         update_irq(s);
 
@@ -84,8 +113,7 @@ static void timer_expire(void *opaque)
             s->running = false;
             timer_del(&s->timer);
         } else {
-            s->time_offset += s->tick_period;
-            timer_mod_ns(&s->timer, s->time_offset);
+            timer_set(s);
         }
     } else {
         timer_del(&s->timer);
@@ -161,8 +189,8 @@ static void nrf51_timer_write(void *opaque, hwaddr offset,
     case NRF51_TIMER_TASK_START:
         if (value == NRF51_TRIGGER_TASK && s->mode == NRF51_TIMER_TIMER) {
             s->running = true;
-            s->time_offset = now + s->tick_period;
-            timer_mod_ns(&s->timer, s->time_offset);
+            s->time_offset = now;
+            timer_set(s, now);
         }
         break;
     case NRF51_TIMER_TASK_STOP:
@@ -186,6 +214,11 @@ static void nrf51_timer_write(void *opaque, hwaddr offset,
     case NRF51_TIMER_TASK_CAPTURE_0 ... NRF51_TIMER_TASK_CAPTURE_3:
         if (value == NRF51_TRIGGER_TASK) {
             idx = (offset - NRF51_TIMER_TASK_CAPTURE_0) / 4;
+
+            if (s->running) {
+                timer_partial_progress(s);
+            }
+
             s->cc[idx] = s->counter;
         }
         break;
@@ -249,7 +282,7 @@ static void nrf51_timer_init(Object *obj)
     SysBusDevice *sbd = SYS_BUS_DEVICE(obj);
 
     memory_region_init_io(&s->iomem, obj, &rng_ops, s,
-            TYPE_NRF51_TIMER, NRF51_TIMER_SIZE);
+                          TYPE_NRF51_TIMER, NRF51_TIMER_SIZE);
     sysbus_init_mmio(sbd, &s->iomem);
     sysbus_init_irq(sbd, &s->irq);
 
